@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python proof of concept - reference only, to be deleted
+/scas-id-card/
+
+# real student data used as test fixtures - never commit
+/fixtures/
+/e2e/shots/
+/.taste-skill/

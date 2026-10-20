@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SCAS ID Cards
 
-## Getting Started
+Generates Sudharsan College of Arts and Science student ID cards from a class
+workbook, entirely in the browser — no server, nothing uploaded anywhere.
 
-First, run the development server:
+1. **Upload** an `.xlsx` / `.xlsm` / `.xls` / `.csv`: one row per student,
+   photos embedded in the sheet or added as files named after the student
+   (e.g. `AJITHKUMAR_A.jpg`).
+2. **Review** the parsed rows, fix text inline, see who is missing a photo.
+3. **Edit photos**: crop, zoom, straighten, flip, fill, light adjustments.
+4. **Generate** PNG cards (print DPI written into the file) and/or SVG for
+   CorelDRAW, in one or more colour themes, with an optional print sheet and PDF.
+
+Cards are 60.9 × 96.9 mm at any DPI (600 dpi → 1438 × 2288 px).
+
+**CorelDRAW:** *File → Import* the `.svg`; shapes are curves and text is live.
+Convert text to curves (Ctrl+Shift+Q) before sending to a print shop.
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
+npm test             # unit + golden tests (fixtures/ is optional)
+npm run build        # static site in out/ — host it anywhere
+node e2e/smoke.mjs   # browser smoke test against out/ (E2E_FULL=1 for everything)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `CLAUDE.md` for the card specification and architecture.
