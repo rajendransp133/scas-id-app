@@ -26,4 +26,7 @@ npm run build        # static site in out/ — host it anywhere
 node e2e/smoke.mjs   # browser smoke test against out/ (E2E_FULL=1 for everything)
 ```
 
+**Host on a VPS:** nginx serving `out/` with pre-gzipped files, built on your
+PC and uploaded by `deploy\deploy.ps1`. See `deploy/README.md`.
+
 See `CLAUDE.md` for the card specification and architecture.

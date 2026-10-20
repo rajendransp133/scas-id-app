@@ -28,21 +28,29 @@ export function startJob(job: GenJob, onProgress: (p: Progress) => void): Runnin
 
   const worker = new Worker(new URL("../../workers/render.worker.ts", import.meta.url), { type: "module" });
   let fallback: Running | null = null;
+  let started = false;
   let reject: (e: Error) => void = () => {};
   const promise = new Promise<GenResult>((resolve, rej) => {
     reject = rej;
+    const runHere = () => {
+      worker.terminate();
+      fallback = onMainThread(job, onProgress);
+      fallback.promise.then(resolve, rej);
+    };
     worker.onmessage = (e) => {
+      started = true;
       const m = e.data;
       if (m.type === "progress") onProgress(m);
       else if (m.type === "done") { worker.terminate(); resolve({ zip: m.zip, files: m.files }); }
       else if (m.type === "error") { worker.terminate(); rej(new Error(m.message)); }
-      else if (m.type === "unsupported") {
-        worker.terminate();
-        fallback = onMainThread(job, onProgress);
-        fallback.promise.then(resolve, rej);
-      }
+      else if (m.type === "unsupported") runHere();
     };
-    worker.onerror = (e) => { worker.terminate(); rej(new Error(e.message || "Rendering failed")); };
+    // A worker script that never loads (a host serving it with the wrong type)
+    // errors before its first message: render here instead of failing.
+    worker.onerror = (e) => {
+      if (!started) runHere();
+      else { worker.terminate(); rej(new Error(e.message || "Rendering failed")); }
+    };
   });
   worker.postMessage({ job, origin: location.origin });
   return {
