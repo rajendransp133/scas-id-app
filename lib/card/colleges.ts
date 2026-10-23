@@ -59,7 +59,7 @@ export const COLLEGES: Record<CollegeId, College> = {
     sub: "COLLEGE OF EDUCATION",
     lines: [
       { text: "PERUMANADU, PUDUKKOTTAI - 622 104", top: 186, h: 22, color: "black" },
-      { text: "COLLEGE CODE : 11620, PH.NO : 04322 236888", top: 216, h: 22, color: "black" },
+      { text: "COLLEGE CODE : 11620, PH.NO : +91 96599 93525", top: 216, h: 22, color: "black" },
       { text: "Approved by the N.C.T.E. No: F.S.R.O /NCTE /B.Ed/ APSO412/2007", top: 246, h: 17, color: "black", maxW: 620 },
       { text: "Approved by TNTEU/ affiliation /2007/3163", top: 270, h: 17, color: "black", maxW: 520 },
     ],

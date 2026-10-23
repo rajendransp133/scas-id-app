@@ -1,10 +1,29 @@
-# /etc/nginx/sites-available/id-card: serves the static export in out/.
-# Everything (Excel parsing, photos, rendering, ZIP/PDF) runs in the browser;
-# nginx only hands out files that deploy/precompress.mjs already gzipped.
+# /etc/nginx/sites-available/id-card: serves the static export in out/ at
+# https://id.scascollege.ac.in. Everything (Excel parsing, photos, rendering,
+# ZIP/PDF) runs in the browser; nginx only hands out files that
+# deploy/precompress.mjs already gzipped.
+#
+# The certificate comes from Let's Encrypt (certbot, see deploy/README.md) and
+# certbot.timer renews it. Run certbot once before installing this file: nginx
+# refuses to start if the certificate files below don't exist yet.
+
+# Plain http only redirects.
 server {
-    listen 3333;
-    listen [::]:3333;
-    server_name _;
+    listen 80;
+    listen [::]:80;
+    server_name id.scascollege.ac.in;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl ipv6only=on;
+    server_name id.scascollege.ac.in;
+
+    ssl_certificate /etc/letsencrypt/live/id.scascollege.ac.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/id.scascollege.ac.in/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     root /var/www/id-card;
     index index.html;
