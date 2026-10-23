@@ -6,15 +6,6 @@ export const CARD_W = 719;           // 60.9 mm
 export const CARD_H = 1144;          // 96.9 mm
 export const MM_PER_UNIT = 25.4 / BASE_DPI;
 
-/** Everything printed in the header, in one place. */
-export const COLLEGE = {
-  name: "SUDHARSAN",
-  sub: "COLLEGE OF ARTS AND SCIENCE",
-  address: "PERUMANADU, PUDUKKOTTAI.",
-  phone: "PH : +91 9150750972, +91 9600409700",
-  website: "scascollege.ac.in",
-};
-
 export type Box = readonly [x0: number, y0: number, x1: number, y1: number];
 export type Pt = readonly [x: number, y: number];
 export type WaveColour = "yellow" | "black" | "green";
@@ -24,11 +15,8 @@ export const G = {
   logo_box: [30, 42, 116, 137] as Box,
   title_box: [136, 45, 687, 127] as Box,       // "SUDHARSAN"
   line2_box: [43, 149, 674, 176] as Box,       // COLLEGE OF ARTS AND SCIENCE
-  hdr_cx: 359,
+  hdr_cx: 359,                                 // lines 3.. are per college (colleges.ts)
   hdr_max_w: 656,
-  line3: [191, 26] as const,                   // (top, height) address
-  line4: [229, 27] as const,                   // phone numbers
-  line5: [266, 24] as const,                   // website
   // chevron under the header
   chev_top: 254,
   chev_mid: 300,

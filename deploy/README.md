@@ -32,7 +32,7 @@ sudo ln -sf /etc/nginx/sites-available/id-card /etc/nginx/sites-enabled/id-card
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo mkdir -p /var/www/id-card
 sudo nginx -t && sudo systemctl enable --now nginx && sudo systemctl reload nginx
-sudo ufw allow 80/tcp     # only if ufw is enabled
+sudo ufw allow 3333/tcp   # only if ufw is enabled
 ```
 
 ## Every deploy (from the PC)
@@ -47,8 +47,8 @@ with sudo instead of root works too; the script asks for the sudo password.
 ## Check it
 
 ```bash
-curl -sI http://<vps-ip>/review                   # 200
-curl -sI -H 'Accept-Encoding: gzip' http://<vps-ip>/ | grep -i content-encoding   # gzip
+curl -sI http://<vps-ip>:3333/review                   # 200
+curl -sI -H 'Accept-Encoding: gzip' http://<vps-ip>:3333/ | grep -i content-encoding   # gzip
 ps -o rss=,cmd= -C nginx                          # RSS in KB: a few MB
 ```
 

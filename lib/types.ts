@@ -9,6 +9,8 @@ export interface Student {
   contact: string;
   address: string;
   blood_group: string;
+  /** register number; printed only by colleges that ask for it */
+  reg_no: string;
 }
 
 /** Where a student's current photo came from. */

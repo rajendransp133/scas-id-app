@@ -6,7 +6,7 @@ import { extname, join, normalize } from "node:path";
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
   ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".txt": "text/plain",
-  ".json": "application/json", ".woff2": "font/woff2",
+  ".json": "application/json", ".woff2": "font/woff2", ".webp": "image/webp",
 };
 
 export function serve(root, port = 0) {

@@ -2,8 +2,8 @@
 # Everything (Excel parsing, photos, rendering, ZIP/PDF) runs in the browser;
 # nginx only hands out files that deploy/precompress.mjs already gzipped.
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 3333;
+    listen [::]:3333;
     server_name _;
 
     root /var/www/id-card;

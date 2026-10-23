@@ -44,6 +44,20 @@ describe("cells", () => {
     expect(mapHeaders(["FULL NAME", "ADDRESS"])).toMatchObject({ name: 0, address: 1 });
   });
 
+  it("maps the College of Education layout", () => {
+    const m = mapHeaders(["S.NO", "FULL NAME", "BATCH", "DEPARTMENT", "REGISTER NUMBER", "DOB", "CONTACT",
+                          "ADDRESS", "BLOOD GROUP", "PHOTO"]);
+    expect(m).toEqual({ name: 1, batch: 2, course: 3, reg_no: 4, dob: 5, contact: 6, address: 7,
+                        blood_group: 8, photo: 9 });
+    const [s] = rowsToStudents([
+      [0, ["S.NO", "FULL NAME", "BATCH", "DEPARTMENT", "REGISTER NUMBER", "DOB", "CONTACT", "ADDRESS", "BLOOD GROUP"]],
+      [1, [1, "T.KEERTHANA", "2025 - 2027", "B.Ed., ENGLISH", 2512345678, "25.11.2004", 9843983828,
+           "1/100, THUVAR", "A+Ve"]],
+    ]);
+    expect(s.student).toMatchObject({ name: "T.KEERTHANA", course: "B.Ed., ENGLISH", reg_no: "2512345678",
+                                      contact: "9843983828", blood_group: "A+Ve" });
+  });
+
   it("infers columns of a header-less sheet", () => {
     const rows = [
       [1, "ARUN K", "B.Sc PHYSICS", "12.03.2006", "9876543210", "12, MAIN ROAD, KARAIKUDI, SIVAGANGAI", "O+", "2025-2028"],
@@ -81,7 +95,7 @@ describe("photo priority and coverage", () => {
     { row: 1, photoCell: "#VALUE!", student: { name: "ARUN K" } },
     { row: 2, photoCell: "custom.JPG", student: { name: "BALA" } },
     { row: 3, photoCell: "", student: { name: "CHITRA" } },
-  ].map((p) => ({ ...p, student: { course: "", year: "", batch: "", dob: "", contact: "", address: "", blood_group: "", ...p.student } }));
+  ].map((p) => ({ ...p, student: { course: "", year: "", batch: "", dob: "", contact: "", address: "", blood_group: "", reg_no: "", ...p.student } }));
   const emb = (n: number) => ({ bytes: new Uint8Array([n]), part: `xl/media/image${n}.png`, ext: ".png", mime: "image/png" });
   const rows = new Map([[1, emb(1)], [2, emb(2)], [3, emb(3)]]);
 

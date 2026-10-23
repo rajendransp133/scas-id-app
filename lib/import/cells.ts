@@ -129,7 +129,7 @@ export type Field = keyof Student | "photo";
 
 export const ALIASES: Record<Field, string[]> = {
   name: ["name of the student", "name", "student name", "student"],
-  course: ["cource", "course", "degree", "class"],
+  course: ["cource", "course", "degree", "class", "department", "dept"],
   year: ["year", "study year"],
   dob: ["dob", "date of birth", "d.o.b"],
   contact: ["students mobile no.", "students mobile no", "mobile", "mobile no",
@@ -138,6 +138,8 @@ export const ALIASES: Record<Field, string[]> = {
   blood_group: ["blood group", "blood", "bloodgroup", "blood grp"],
   batch: ["batch", "batch year"],
   photo: ["photo", "image", "photo file"],
+  reg_no: ["register number", "register no", "reg no", "reg. no", "reg.no", "registration number",
+           "registration no", "roll no", "roll number"],
 };
 
 export type ColumnMap = Partial<Record<Field, number>>;
@@ -252,7 +254,7 @@ export function rowsToStudents(rows: Row[]): ParsedStudent[] {
       student: {
         name, course: get("course"), year: get("year"), batch: get("batch"),
         dob: get("dob"), contact: get("contact"), address: get("address"),
-        blood_group: get("blood_group"),
+        blood_group: get("blood_group"), reg_no: get("reg_no"),
       },
     });
   }

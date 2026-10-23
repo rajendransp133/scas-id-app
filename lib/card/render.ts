@@ -2,6 +2,7 @@
 
 import type { Img } from "@/lib/photo/applyEdit";
 import type { PhotoEdit, Student } from "@/lib/types";
+import type { College } from "./colleges";
 import { renderToCanvas, type AnyCanvas, type MakeCanvas, type PaintInputs } from "./canvasBackend";
 import { layoutCard, type AssetKey, type AssetSizes, type Prim } from "./layout";
 import type { Palette } from "./themes";
@@ -22,10 +23,12 @@ export interface CardJob {
   palette: Palette;
   photo?: Img | null;
   edit?: PhotoEdit;
+  /** default: SCAS */
+  college?: College;
 }
 
 export function cardPrims(job: CardJob, measure: Measure, assets: CardAssets): Prim[] {
-  return layoutCard(job.student, job.palette, measure, assetSizes(assets), Boolean(job.photo));
+  return layoutCard(job.student, job.palette, measure, assetSizes(assets), Boolean(job.photo), job.college);
 }
 
 export function renderCardCanvas(make: MakeCanvas, job: CardJob, measure: Measure,

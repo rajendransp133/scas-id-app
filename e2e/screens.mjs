@@ -19,6 +19,10 @@ const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? "msedge" });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
+await ctx.addInitScript(() => {               // skip the sign-in and college screens
+  localStorage.setItem("scas-id-card:session", "admin");
+  localStorage.setItem("scas-id-card:college", "scas");
+});
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 

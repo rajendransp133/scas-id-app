@@ -23,7 +23,7 @@ export function Persistence({ children }: { children: ReactNode }) {
         let book = null;
         try { book = saved ? openBook(saved.data, saved.fileName) : null; } catch { book = null; }
         useStore.setState({
-          book, sheetName: session.sheetName, students: session.students, photos: session.photos,
+          book, sheetName: session.sheetName, students: session.students.map((st) => ({ ...st, reg_no: st.reg_no ?? "" })), photos: session.photos,
           edits: session.edits, options: { ...DEFAULT_OPTIONS, ...session.options }, selected: session.selected,
         });
       }

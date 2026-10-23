@@ -2,6 +2,7 @@
 // decoded photos.  Works in the page and in a Web Worker.
 
 import type { AnyCanvas, MakeCanvas } from "@/lib/card/canvasBackend";
+import { COLLEGES, type CollegeId } from "@/lib/card/colleges";
 import type { CardAssets } from "@/lib/card/render";
 import { CANVAS_FONT, canvasMeasure, type Measure } from "@/lib/card/text";
 import type { Img } from "@/lib/photo/applyEdit";
@@ -50,20 +51,21 @@ export async function hasCardFonts(): Promise<boolean> {
   }
 }
 
-export const ASSET_URLS = {
-  logo: "/card-assets/college_logo.png",
-  sign: "/card-assets/principal_sign.png",
-  drop: "/card-assets/blood_drop.png",
-} as const;
+/** Artwork per college: the logo and signature differ, the drop is shared. */
+export function assetUrls(college: CollegeId) {
+  return { ...COLLEGES[college].assets, drop: "/card-assets/blood_drop.png" };
+}
 
-let assets: Promise<CardAssets> | null = null;
+const assets = new Map<CollegeId, Promise<CardAssets>>();
 
-/** The card artwork, decoded once.  A missing file falls back to a shape. */
-export function loadCardAssets(base = typeof location !== "undefined" ? location.origin : ""): Promise<CardAssets> {
-  if (!assets) {
-    assets = (async () => {
+/** The card artwork, decoded once per college.  A missing file falls back to a shape. */
+export function loadCardAssets(college: CollegeId,
+                               base = typeof location !== "undefined" ? location.origin : ""): Promise<CardAssets> {
+  let p = assets.get(college);
+  if (!p) {
+    p = (async () => {
       const out: CardAssets = {};
-      await Promise.all(Object.entries(ASSET_URLS).map(async ([k, url]) => {
+      await Promise.all(Object.entries(assetUrls(college)).map(async ([k, url]) => {
         try {
           const res = await fetch(base + url);
           if (res.ok) out[k as keyof CardAssets] = (await createImageBitmap(await res.blob())) as Img;
@@ -71,8 +73,9 @@ export function loadCardAssets(base = typeof location !== "undefined" ? location
       }));
       return out;
     })();
+    assets.set(college, p);
   }
-  return assets;
+  return p;
 }
 
 const decoded = new WeakMap<Blob, Promise<Img>>();

@@ -43,10 +43,16 @@ try {
   for (const [w, h] of SIZES) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: w < 768, hasTouch: true, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
+    await ctx.addInitScript(() => localStorage.setItem("scas-id-card:session", "admin")); // skip the sign-in screen
     page.on("pageerror", (e) => problems.push(`${w}: ${e}`));
     await page.goto(base + "/");
     await page.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase("scas-id-cards"); q.onsuccess = q.onerror = q.onblocked = () => r(); }));
+    await page.evaluate(() => localStorage.removeItem("scas-id-card:college"));
     await page.reload();
+    await page.getByText("Which college are these cards for?").waitFor();
+    await audit(page, `${w} college`);
+    await page.screenshot({ path: join(out, `${w}-0-college.png`), fullPage: true });
+    await page.getByRole("button", { name: /College of Arts and Science/ }).click();
     await page.waitForTimeout(500);
     await audit(page, `${w} upload-empty`);
     await page.locator('input[type=file][accept*=".xlsx"]').setInputFiles(book);

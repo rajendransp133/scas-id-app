@@ -20,6 +20,7 @@ import {
   type Book,
   type SheetSummary,
 } from "@/lib/import";
+import { useCollege } from "@/lib/browser/college";
 import { ALIASES } from "@/lib/import/cells";
 import { useStore } from "@/store/useStore";
 
@@ -28,6 +29,7 @@ export default function UploadPage() {
   const loadSheet = useStore((s) => s.loadSheet);
   const currentFile = useStore((s) => s.book?.fileName ?? null);
   const currentCount = useStore((s) => s.students.length);
+  const college = useCollege();
 
   const [book, setBook] = useState<Book | null>(null);
   const [sheets, setSheets] = useState<SheetSummary[]>([]);
@@ -292,8 +294,8 @@ export default function UploadPage() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Columns it reads</h2>
             <a
-              href="/sample/sample-class.xlsx"
-              download="sample-class.xlsx"
+              href={college.sample}
+              download={college.sample.split("/").pop()}
               className="inline-flex h-8 shrink-0 items-center rounded-md pointer-coarse:h-10 border border-control bg-sheet px-3 text-sm font-medium transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               Download sample
@@ -305,7 +307,7 @@ export default function UploadPage() {
           </p>
           <table className="mt-3 w-full text-sm">
             <tbody>
-              {FIELDS.map(([field, label]) => (
+              {FIELDS.filter(([f]) => f !== "reg_no" || college.regNo).map(([field, label]) => (
                 <tr key={field} className="border-t border-rule align-top">
                   <th
                     scope="row"
@@ -329,6 +331,7 @@ export default function UploadPage() {
 const FIELDS = [
   ["name", "Name"],
   ["course", "Course"],
+  ["reg_no", "Register no."],
   ["year", "Year"],
   ["batch", "Batch"],
   ["dob", "Date of birth"],

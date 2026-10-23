@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A **frontend-only Next.js app** (no backend, no API routes, no server actions) that generates student ID cards for Sudharsan College of Arts and Science. It replaces a Python proof of concept (`scas-id-card/`, gitignored, safe to delete): **never import, shell out to, or read from that folder**. Everything the app needs from it is specified in this file and pinned by the golden fixtures; treat this file as the source of truth for the card design.
+A **frontend-only Next.js app** (no backend, no API routes, no server actions) that generates student ID cards for Sudharsan College of Arts and Science (SCAS) and Sudharsan College of Education (SCE); see "Colleges". It replaces a Python proof of concept (`scas-id-card/`, gitignored, safe to delete): **never import, shell out to, or read from that folder**. Everything the app needs from it is specified in this file and pinned by the golden fixtures; treat this file as the source of truth for the card design.
 
 Scope:
 1. Bulk upload an Excel workbook (`.xlsx`, also `.xlsm`/`.xls`/`.csv`) holding student rows and their photos.
@@ -34,7 +34,7 @@ Scope:
 
   Tests skip themselves when `fixtures/` is absent.
 
-The four card bitmaps are static files in `public/card-assets/`: `college_logo.png` (1266×1151 RGBA), `principal_sign.png` (200×44 RGBA), `blood_drop.png` (663×980 RGBA). They are already pre-processed: transparent backgrounds, wordmark trimmed off the logo, "Principal" caption trimmed off the signature. The app uses them as they are and never re-derives them.
+The card bitmaps are static files in `public/card-assets/`: `college_logo.png` (1266×1151 RGBA), `principal_sign.png` (200×44 RGBA), `blood_drop.png` (663×980 RGBA), and the SCE signature `sce/principal_sign.png` (216×39 RGBA, keyed out of a 241×52 JPEG scan, so it's a little soft at 600 dpi; replace it with a better scan of the same kind). They are already pre-processed: transparent backgrounds, wordmark trimmed off the logo, "Principal" caption trimmed off the signature. The app uses them as they are and never re-derives them.
 
 ## Architecture
 
@@ -62,12 +62,12 @@ lib/card/layout.ts  (student, palette, measure) → Prim[] in card units
 
 ## Data import (port of the POC's rules — keep them)
 
-**Student fields:** `name, course, year, batch, dob, contact, address, blood_group, photo`.
+**Student fields:** `name, course, year, batch, dob, contact, address, blood_group, reg_no, photo`.
 
 **Header detection:** the first non-empty row containing a cell whose normalised text includes `"name"` is the header. Normalise = trim, lowercase, collapse whitespace, strip a trailing `:`. For each field, first look for an exact alias match, then a substring match:
 ```
 name        : name of the student | name | student name | student
-course      : cource | course | degree | class          ("cource" is a real typo in the sheets)
+course      : cource | course | degree | class | department | dept   ("cource" is a real typo in the sheets)
 year        : year | study year
 dob         : dob | date of birth | d.o.b
 contact     : students mobile no. | students mobile no | mobile | mobile no | contact | contact no | phone
@@ -75,7 +75,9 @@ address     : address | residential address
 blood_group : blood group | blood | bloodgroup | blood grp
 batch       : batch | batch year
 photo       : photo | image | photo file
+reg_no      : register number | register no | reg no | reg. no | reg.no | registration number | registration no | roll no | roll number
 ```
+Header-less inference never fills `reg_no`.
 
 **No header row → infer columns from their contents.** A column is claimed by the first predicate below that more than 60% of its non-empty cells satisfy, choosing the best-scoring free column:
 1. `blood_group`: `^(AB|A|B|O)\s*[12]?\s*[+-]?\s*(VE|POS(ITIVE)?|NEG(ATIVE)?)?$` (case-insensitive)
@@ -134,7 +136,7 @@ Its job is to fit a head shot into the card's photo window. Requirements:
 
 Card units are **300-DPI pixels**. The card is **719 × 1144** units = 2.397 × 3.813 in = **60.9 × 96.9 mm**. Output scale = `dpi / 300`. The physical size never changes; DPI only sets the pixel count (300 → 719×1144, 600 → 1438×2288, 1200 → 2876×4576).
 
-Header text constants: `SUDHARSAN` · `COLLEGE OF ARTS AND SCIENCE` · `PERUMANADU, PUDUKKOTTAI.` · `PH : +91 9150750972, +91 9600409700` · `scascollege.ac.in`. Keep these in one config object.
+Header text constants (SCAS): `SUDHARSAN` · `COLLEGE OF ARTS AND SCIENCE` · `PERUMANADU, PUDUKKOTTAI.` · `PH : +91 9150750972, +91 9600409700` · `scascollege.ac.in`. They live in the college profile (`lib/card/colleges.ts`), with the other college's; see "Colleges". The table below is the SCAS card, which the golden files pin.
 
 Paint order: white background → watermark → header → chevron → batch → photo → blood drop → name/course → details → signature → wave.
 
@@ -166,6 +168,15 @@ Fonts: wordmark **Arial Black**, everything else **Arial Bold**. Await `document
 **Kerning off.** The POC's Pillow had no raqm, so it set every run unkerned, and its address line breaks were decided on those wider widths. Measure and draw with `fontKerning = "none"` (canvas) / `font-kerning="none"` (SVG). With kerning on, about 2% of the golden addresses wrap differently. Address wrapping measures the **advance width** (`TextMetrics.width`, which is what Pillow's `getbbox` width was), while positioning uses the **ink box**. Our SVG positions text by true ink boxes; the POC's SVG used Pillow's advance-based boxes, so our SVG matches the PNG output more closely than the POC's own SVG did.
 
 **Address wrapping and auto-shrink.** First split at commas, keeping the comma on the end of each chunk, and join chunks while they fit. Then break between words if a chunk still overflows. The width of line `i` is `clamp(waveLeftAt(y) − 206 − 14, 120, 460)`, where `y = 812 + (2+i)·pitch + cap` and `waveLeftAt` is the left edge of the **yellow** wave curve at that y (the card width above the curve, its end x below it). This makes lines shorten as they approach the wave. The block ends at `812 + pitch·(2 + lines)`. While that is past **1012** (clear of the signature), reduce `cap` by 1, down to a minimum of 15, with `pitch = cap·36/21`, and re-wrap. Both backends must use the same wrap result. The SVG backend measures at 8× scale, so line breaks match the print-resolution bitmap.
+
+## Colleges
+
+`lib/card/colleges.ts` holds one profile per college: the two fitted runs (`name`, `sub`), the height-fitted header `lines` (text, top, height, colour, optional width cap), `regNo`, the logo/signature URLs and the sample workbook. Everything else (geometry, themes, text model, backends) is shared. `layoutCard(..., college)` defaults to SCAS, whose output must stay identical to the golden files.
+
+- **SCAS**: lines at top/height 191/26, 229/27 (black) and 266/24 (website, `blue`); `regNo` off.
+- **SCE** (B.Ed.): `SUDHARSAN` / `COLLEGE OF EDUCATION`, then black lines `PERUMANADU, PUDUKKOTTAI - 622 104` (186/22), `COLLEGE CODE : 11620, PH.NO : 04322 236888` (216/22), `Approved by the N.C.T.E. No: F.S.R.O /NCTE /B.Ed/ APSO412/2007` (246/17, max width 620) and `Approved by TNTEU/ affiliation /2007/3163` (270/17, max width 520). There's no website. The approval lines must stay clear of the chevron's wedges, which rise from (0,254) to (78,300); `lib/card/colleges.test.ts` checks this. Its signature is `sce/principal_sign.png`, and the logo is shared.
+- `regNo` (SCE): a `REG. NO` row goes above DOB when the student has one, and `layoutDetails(address, measure, fixedRows)` counts it, so the address wraps and shrinks against one more row. The DEPARTMENT column maps to `course` and is printed as written (e.g. `B.Ed., ENGLISH`).
+- The college is chosen after sign-in, before the upload page (`components/CollegePicker.tsx`). It's stored in localStorage (`lib/browser/college.ts`, key `scas-id-card:college`), survives "Start over", and is cleared on sign-out. Every render path takes it: `CardPreview`, `renderSingle`, and `GenJob.college` for the worker, with assets loaded per college by `loadCardAssets(college)`. The e2e smoke test picks SCAS unless `E2E_COLLEGE=sce`.
 
 ## Themes
 

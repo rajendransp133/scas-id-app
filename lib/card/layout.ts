@@ -3,8 +3,9 @@
 
 import { batchLine, formatBloodGroup } from "@/lib/student";
 import type { Student } from "@/lib/types";
+import { COLLEGES, type College } from "./colleges";
 import {
-  CARD_H, CARD_W, COLLEGE, CONDENSE, G, WINDOW_BOX, waveLeftAt, type Box, type Pt,
+  CARD_H, CARD_W, CONDENSE, G, WINDOW_BOX, waveLeftAt, type Box, type Pt,
 } from "./geometry";
 import type { Palette, RGB } from "./themes";
 import { capScale, inkH, inkW, wrapValue, type FontKey, type Measure } from "./text";
@@ -134,20 +135,21 @@ function contain(size: { w: number; h: number }, b: Box): Box {
 export interface DetailLayout { cap: number; pitch: number; lines: string[] }
 
 /** Row size + the wrapped address.  Rows start at cap 21 and shrink a unit at
- *  a time until the block clears the signature. */
-export function layoutDetails(address: string, measure: Measure): DetailLayout {
+ *  a time until the block clears the signature.  `fixedRows` is how many
+ *  one-line rows sit above the address (DOB, CONTACT, and REG. NO if printed). */
+export function layoutDetails(address: string, measure: Measure, fixedRows = 2): DetailLayout {
   const k0 = CONDENSE.detail;
   const plan = (cap: number) => {
     const k = capScale(measure, "bold", cap);
     const pitch = (cap * G.row_pitch) / G.row_cap;
     const width = (s: string) => measure(s, "bold").advance * k * k0;
     const limit = (i: number) => {
-      const y = G.row_top + (2 + i) * pitch + cap;
+      const y = G.row_top + (fixedRows + i) * pitch + cap;
       const room = waveLeftAt(y) - G.value_x - 14;
       return Math.max(120, Math.min(G.value_max_w, room));
     };
     const lines = wrapValue(address, width, limit);
-    return { cap, pitch, lines, end: G.row_top + pitch * (2 + lines.length) };
+    return { cap, pitch, lines, end: G.row_top + pitch * (fixedRows + lines.length) };
   };
   let p = plan(G.row_cap);
   while (p.end > G.detail_bottom && p.cap > G.row_cap_min) p = plan(p.cap - 1);
@@ -157,7 +159,7 @@ export function layoutDetails(address: string, measure: Measure): DetailLayout {
 // -- the card -------------------------------------------------------------------
 
 export function layoutCard(st: Student, C: Palette, measure: Measure, assets: AssetSizes,
-                           hasPhoto: boolean): Prim[] {
+                           hasPhoto: boolean, college: College = COLLEGES.scas): Prim[] {
   const out: (Prim | null)[] = [];
   const push = (...p: (Prim | null)[]) => out.push(...p);
 
@@ -175,14 +177,10 @@ export function layoutCard(st: Student, C: Palette, measure: Measure, assets: As
   push(assets.logo
     ? { kind: "asset", asset: "logo", box: contain(assets.logo, G.logo_box) }
     : { kind: "path", cmds: ellipsePath(G.logo_box), stroke: C.blue, lineWidth: 3 });
-  push(fitted(COLLEGE.name, "heavy", C.blue, G.title_box));
-  push(fitted(COLLEGE.sub, "bold", C.magenta, G.line2_box));
-  for (const [text, [top, h], fill] of [
-    [COLLEGE.address, G.line3, C.black],
-    [COLLEGE.phone, G.line4, C.black],
-    [COLLEGE.website, G.line5, C.blue],
-  ] as const) {
-    push(fittedHeight(measure, text, "bold", fill, G.hdr_cx, top, h, G.hdr_max_w));
+  push(fitted(college.name, "heavy", C.blue, G.title_box));
+  push(fitted(college.sub, "bold", C.magenta, G.line2_box));
+  for (const { text, top, h, color, maxW } of college.lines) {
+    push(fittedHeight(measure, text, "bold", C[color], G.hdr_cx, top, h, maxW ?? G.hdr_max_w));
   }
 
   // chevron
@@ -216,10 +214,13 @@ export function layoutCard(st: Student, C: Palette, measure: Measure, assets: As
   push(inkCap(measure, st.name, "bold", C.magenta, cx, G.name_top, G.name_cap, CONDENSE.name, "c", G.name_max_w));
   push(inkCap(measure, st.course, "bold", C.blue, cx, G.course_top, G.course_cap, CONDENSE.course, "c", G.course_max_w));
 
-  // DOB / CONTACT / ADDRESS
-  const { cap, pitch, lines } = layoutDetails(st.address, measure);
+  // (REG. NO) / DOB / CONTACT / ADDRESS
+  const fixed: [string, string[]][] = [["DOB", [st.dob]], ["CONTACT", [st.contact]]];
+  // a sheet without register numbers gets the usual three rows, not a blank one
+  if (college.regNo && st.reg_no) fixed.unshift(["REG. NO", [st.reg_no]]);
+  const { cap, pitch, lines } = layoutDetails(st.address, measure, fixed.length);
   let y = G.row_top;
-  for (const [label, values] of [["DOB", [st.dob]], ["CONTACT", [st.contact]], ["ADDRESS", lines]] as const) {
+  for (const [label, values] of [...fixed, ["ADDRESS", lines] as [string, string[]]]) {
     push(inkCap(measure, label, "bold", C.black, G.label_x, y, cap, CONDENSE.detail));
     push(inkCap(measure, ":", "bold", C.black, G.colon_x, y, cap, CONDENSE.detail));
     values.forEach((v, i) => push(inkCap(measure, v, "bold", C.black, G.value_x, y + i * pitch, cap, CONDENSE.detail)));

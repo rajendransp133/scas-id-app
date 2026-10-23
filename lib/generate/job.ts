@@ -10,6 +10,7 @@ import {
   type MakeCanvas,
 } from "@/lib/card/canvasBackend";
 import { BASE_DPI, CARD_H, CARD_W } from "@/lib/card/geometry";
+import { COLLEGES, type CollegeId } from "@/lib/card/colleges";
 import { cardPrims, type CardAssets } from "@/lib/card/render";
 import {
   SvgDefs,
@@ -34,6 +35,8 @@ export interface GenJob {
   students: GenStudent[];
   options: GenerateOptions;
   zipName: string;
+  /** whose header and signature; default SCAS.  `env.assets` must match. */
+  college?: CollegeId;
 }
 
 export interface GenEnv {
@@ -91,6 +94,7 @@ export async function runJob(
   signal?: AbortSignal,
 ): Promise<GenResult> {
   const o = job.options;
+  const college = COLLEGES[job.college ?? "scas"];
   const themes = o.themes.length ? o.themes : ["classic"];
   const wantPng = o.format === "png" || o.format === "both";
   const wantSvg = o.format === "svg" || o.format === "both";
@@ -135,6 +139,7 @@ export async function runJob(
         palette,
         photo: img,
         edit: job.students[i].edit,
+        college,
       };
       return {
         img,

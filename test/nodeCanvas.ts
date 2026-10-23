@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createCanvas, GlobalFonts, loadImage, type Image } from "@napi-rs/canvas";
 import type { AnyCanvas, MakeCanvas } from "@/lib/card/canvasBackend";
+import { COLLEGES, type CollegeId } from "@/lib/card/colleges";
 import type { CardAssets } from "@/lib/card/render";
 import { canvasMeasure, type Measure } from "@/lib/card/text";
 import type { Img } from "@/lib/photo/applyEdit";
@@ -26,12 +27,13 @@ export async function loadImg(src: string | Uint8Array): Promise<Img> {
   return (await loadImage(typeof src === "string" ? readFileSync(src) : Buffer.from(src))) as unknown as Img;
 }
 
-export async function loadAssets(): Promise<CardAssets> {
-  const dir = join(ROOT, "public", "card-assets");
+export async function loadAssets(college: CollegeId = "scas"): Promise<CardAssets> {
+  const file = (url: string) => join(ROOT, "public", ...url.split("/").filter(Boolean));
+  const { logo, sign } = COLLEGES[college].assets;
   return {
-    logo: await loadImg(join(dir, "college_logo.png")),
-    sign: await loadImg(join(dir, "principal_sign.png")),
-    drop: await loadImg(join(dir, "blood_drop.png")),
+    logo: await loadImg(file(logo)),
+    sign: await loadImg(file(sign)),
+    drop: await loadImg(file("/card-assets/blood_drop.png")),
   };
 }
 

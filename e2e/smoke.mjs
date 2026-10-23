@@ -1,5 +1,6 @@
 // End-to-end smoke test against the static build, in the system's Edge/Chrome.
 //   npm run build && node e2e/smoke.mjs [workbook] [screenshot-dir]
+// E2E_COLLEGE=sce picks the College of Education after sign-in (default SCAS).
 // Uploads a workbook, walks review -> editor -> generate, checks for console
 // errors and saves screenshots.
 import { mkdirSync } from "node:fs";
@@ -37,8 +38,25 @@ const step = async (name, fn) => {
 };
 
 try {
-  await step("1-upload", async () => {
+  await step("0-sign-in", async () => {
     await page.goto(base + "/");
+    await page.getByLabel("Username").fill("admin");
+    await page.getByLabel("Password", { exact: true }).fill("wrong");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByText("Incorrect username or password.").waitFor();
+    await page.getByLabel("Password", { exact: true }).fill("admin123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByText("Which college are these cards for?").waitFor();
+  });
+
+  // E2E_COLLEGE=sce for the College of Education
+  await step("0-college", async () => {
+    const label = process.env.E2E_COLLEGE === "sce" ? /College of Education/ : /College of Arts and Science/;
+    await page.getByRole("button", { name: label }).click();
+    await page.getByRole("button", { name: "Sign out" }).first().waitFor();
+  });
+
+  await step("1-upload", async () => {
     await page.locator('input[type=file][accept*=".xlsx"]').setInputFiles(book);
     await page.getByRole("button", { name: /Continue with \d+ students/ }).waitFor();
   });

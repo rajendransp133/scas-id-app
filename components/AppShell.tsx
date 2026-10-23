@@ -2,43 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { signOut, useSignedIn } from "@/lib/browser/auth";
+import { clearCollege, useCollege, useCollegeId } from "@/lib/browser/college";
 import { useStore } from "@/store/useStore";
+import { CollegePicker } from "./CollegePicker";
+import { Login } from "./Login";
+import { Mark } from "./Mark";
 import { Persistence } from "./Persistence";
 
 // Grid: sidebar 228 + sheet (fluid, inset 8 from the right and bottom) = window.
 // Below lg the frame folds: a 48px top bar, the sheet as the screen, and the
 // four steps in a bottom bar.
-
-/** The product's mark: the card's photo window with a sitter in it. */
-export function Mark({ size = 24 }: { size?: number }) {
-  return (
-    <svg
-      width={size * 0.86}
-      height={size}
-      viewBox="0 0 26 30"
-      aria-hidden="true"
-      className="flex-none"
-    >
-      <rect
-        x="1.5"
-        y="1.5"
-        width="23"
-        height="27"
-        rx="11.5"
-        ry="10"
-        fill="#fff"
-        stroke="var(--color-window)"
-        strokeWidth="2.5"
-      />
-      <circle cx="13" cy="12" r="4.2" fill="var(--color-ink)" />
-      <path
-        d="M5.2 25.5c1.2-4.6 4.3-7 7.8-7s6.6 2.4 7.8 7"
-        fill="var(--color-ink)"
-      />
-    </svg>
-  );
-}
 
 function useSteps() {
   const loaded = useStore((s) => s.students.length);
@@ -106,7 +81,53 @@ export function StartOver({ className = "" }: { className?: string }) {
   );
 }
 
+/** Signing out also forgets the college, so the next person is asked again. */
+function leave() {
+  clearCollege();
+  signOut();
+}
+
+function SignOut({ className = "" }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      className={`text-sm font-medium text-muted hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-ink ${className}`}
+      onClick={leave}
+    >
+      Sign out
+    </button>
+  );
+}
+
+/** Nothing renders until the sign-in state and the college are known (both
+ *  live in localStorage).  After sign-in the college is asked for first. */
 export function AppShell({ children }: { children: ReactNode }) {
+  const signedIn = useSignedIn();
+  const college = useCollegeId();
+  const [picking, setPicking] = useState(false);
+  if (signedIn === null || college === undefined) return <div className="min-h-dvh bg-frame" />;
+  if (!signedIn) return <Login />;
+  if (!college) return <CollegePicker onSignOut={leave} />;
+  if (picking) {
+    return <CollegePicker current={college} onDone={() => setPicking(false)} onCancel={() => setPicking(false)} />;
+  }
+  return <Shell onChangeCollege={() => setPicking(true)}>{children}</Shell>;
+}
+
+function ChangeCollege({ onClick, className = "" }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      className={`text-sm font-medium text-muted hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-ink ${className}`}
+      onClick={onClick}
+    >
+      Change college
+    </button>
+  );
+}
+
+function Shell({ children, onChangeCollege }: { children: ReactNode; onChangeCollege: () => void }) {
+  const college = useCollege();
   const path = usePathname();
   const steps = useSteps();
   const fileName = useStore((s) => s.book?.fileName ?? null);
@@ -122,8 +143,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/" className="flex h-12 items-center gap-2.5 px-2">
           <Mark />
           <span className="leading-4">
-            <span className="block text-sm font-semibold">SCAS ID cards</span>
-            <span className="block text-xs text-muted">Sudharsan College</span>
+            <span className="block text-sm font-semibold">{college.short} ID cards</span>
+            <span className="block text-xs text-muted">{college.label}</span>
           </span>
         </Link>
         <nav aria-label="Steps" className="mt-6 flex flex-col gap-0.5">
@@ -158,8 +179,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto px-3">
+        <div className="mt-auto flex flex-col items-start gap-2 px-3">
           <StartOver className="mt-3" />
+          <ChangeCollege onClick={onChangeCollege} />
+          <SignOut />
         </div>
       </aside>
 
@@ -167,7 +190,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 flex h-12 items-center gap-3 bg-frame px-4 lg:static lg:ml-[228px] lg:px-2">
         <Link href="/" className="flex h-10 items-center gap-2 lg:hidden">
           <Mark size={22} />
-          <span className="text-sm font-semibold">SCAS ID cards</span>
+          <span className="text-sm font-semibold">{college.short} ID cards</span>
         </Link>
         <div className="ml-auto flex min-w-0 items-center gap-2 text-sm lg:ml-0">
           {fileName ? (
@@ -187,6 +210,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-muted">No class loaded</span>
           )}
         </div>
+        <ChangeCollege onClick={onChangeCollege} className="flex h-10 flex-none items-center lg:hidden" />
+        <SignOut className="flex h-10 flex-none items-center lg:hidden" />
       </header>
 
       {/* the sheet */}

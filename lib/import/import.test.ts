@@ -53,6 +53,7 @@ describe.skipIf(!books.length)("import matches the POC", () => {
               dob: want.dob, contact: want.contact, address: want.address,
               blood_group: want.blood_group, slug: want.slug, batchLine: want.batchLine,
               bloodLabel: want.bloodLabel, photoSha1: want.photoSha1,
+              reg_no: st.reg_no,         // not in the POC's data
             });
           });
           expect(imp.coverage.matched).toBe(gs.students.filter((s) => s.photoSha1).length);

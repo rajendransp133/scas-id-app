@@ -4,6 +4,7 @@
 import { renderToCanvas } from "@/lib/card/canvasBackend";
 import { cardPrims } from "@/lib/card/render";
 import { renderCardSvg } from "@/lib/card/svgBackend";
+import { COLLEGES, type CollegeId } from "@/lib/card/colleges";
 import { THEMES } from "@/lib/card/themes";
 import { runJob, type GenJob, type GenResult, type GenStudent, type Progress } from "@/lib/generate/job";
 import { setPngDpi } from "@/lib/png/phys";
@@ -19,7 +20,7 @@ export interface Running {
 
 function onMainThread(job: GenJob, onProgress: (p: Progress) => void): Running {
   const ac = new AbortController();
-  const promise = (async () => runJob(job, await browserEnv(location.origin), onProgress, ac.signal))();
+  const promise = (async () => runJob(job, await browserEnv(job.college ?? "scas", location.origin), onProgress, ac.signal))();
   return { promise, cancel: () => ac.abort() };
 }
 
@@ -63,10 +64,12 @@ export function startJob(job: GenJob, onProgress: (p: Progress) => void): Runnin
 }
 
 /** One card in the chosen format(s), rendered here and now. */
-export async function renderSingle(gs: GenStudent, o: GenerateOptions, theme: string): Promise<{ name: string; blob: Blob }[]> {
-  const env = await browserEnv(location.origin);
+export async function renderSingle(gs: GenStudent, o: GenerateOptions, theme: string,
+                                   college: CollegeId): Promise<{ name: string; blob: Blob }[]> {
+  const env = await browserEnv(college, location.origin);
   const img = gs.photo ? await env.decode(gs.photo).catch(() => null) : null;
-  const cj = { student: gs.student, palette: THEMES[theme] ?? THEMES.classic, photo: img, edit: gs.edit };
+  const cj = { student: gs.student, palette: THEMES[theme] ?? THEMES.classic, photo: img, edit: gs.edit,
+               college: COLLEGES[college] };
   const prims = cardPrims(cj, env.measure, env.assets);
   const slug = slugOf(gs.student.name);
   const out: { name: string; blob: Blob }[] = [];

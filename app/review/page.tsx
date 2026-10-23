@@ -20,6 +20,7 @@ import {
   inputCls,
 } from "@/components/ui";
 import { decodePhoto } from "@/lib/browser/canvas";
+import { useCollege } from "@/lib/browser/college";
 import { IMAGE_ACCEPT, photoFromFile } from "@/lib/browser/importFlow";
 import { THEME_NAMES } from "@/lib/card/themes";
 import { coverageFromHashes } from "@/lib/import/coverage";
@@ -29,7 +30,7 @@ import { effectiveEdit, useStore } from "@/store/useStore";
 
 type Col = { key: keyof Student; label: string; w: string };
 
-const COLS: Col[] = [
+const BASE_COLS: Col[] = [
   { key: "name", label: "Name", w: "min-w-44" },
   { key: "course", label: "Course", w: "min-w-52" },
   { key: "year", label: "Year", w: "min-w-20" },
@@ -38,6 +39,13 @@ const COLS: Col[] = [
   { key: "contact", label: "Contact", w: "min-w-28" },
   { key: "blood_group", label: "Blood", w: "min-w-16" },
   { key: "address", label: "Address", w: "min-w-72" },
+];
+
+/** With the register number, for colleges that print it (or sheets that have it). */
+const COLS_REG: Col[] = [
+  ...BASE_COLS.slice(0, 2),
+  { key: "reg_no", label: "Reg. no", w: "min-w-32" },
+  ...BASE_COLS.slice(2),
 ];
 
 // Row, photo and name stay in view while the other fields scroll sideways.
@@ -54,6 +62,8 @@ export default function ReviewPage() {
   const { book, sheetName, students, photos, edits, selected, options } =
     useStore();
   const { select, updateStudent, setPhoto, setOptions } = useStore.getState();
+  const college = useCollege();
+  const cols = college.regNo || students.some((s) => s.reg_no) ? COLS_REG : BASE_COLS;
   const replaceInput = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const detailRef = useRef<HTMLElement>(null);
@@ -246,7 +256,7 @@ export default function ReviewPage() {
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
               <div className="grid content-start gap-4 sm:grid-cols-2">
-                {COLS.map((c) => (
+                {cols.map((c) => (
                   <label
                     key={c.key}
                     className={`flex flex-col gap-1.5 text-sm ${
@@ -260,6 +270,8 @@ export default function ReviewPage() {
                     <span className="font-medium">
                       {c.key === "blood_group"
                         ? "Blood group"
+                        : c.key === "reg_no"
+                          ? "Register number"
                         : c.key === "dob"
                           ? "Date of birth"
                           : c.label}
@@ -336,6 +348,7 @@ export default function ReviewPage() {
       ) : (
         <StudentTable
           rows={rows}
+          cols={cols}
           selected={cur}
           students={students}
           photos={photos}
@@ -526,6 +539,7 @@ function StudentList({
 /** The whole class at once. Fields scroll sideways; the buttons do it without a trackpad. */
 function StudentTable({
   rows,
+  cols,
   selected,
   students,
   photos,
@@ -535,6 +549,7 @@ function StudentTable({
   onEdit,
 }: {
   rows: number[];
+  cols: Col[];
   selected: number;
   students: Student[];
   photos: Photos;
@@ -591,7 +606,7 @@ function StudentTable({
               <th className="sticky left-12 z-10 w-14 min-w-14 bg-sheet px-2 font-normal">
                 Photo
               </th>
-              {COLS.map((c, k) => (
+              {cols.map((c, k) => (
                 <th
                   key={c.key}
                   className={`px-2 font-normal ${c.w} ${k === 0 ? STICKY_NAME + " bg-sheet" : ""}`}
@@ -620,7 +635,7 @@ function StudentTable({
                     {marks(i)}
                   </div>
                 </td>
-                {COLS.map((c, k) => (
+                {cols.map((c, k) => (
                   <td
                     key={c.key}
                     className={`px-1 ${k === 0 ? `${STICKY_NAME} ${cellBg(i === selected)}` : ""}`}

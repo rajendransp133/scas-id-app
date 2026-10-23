@@ -11,6 +11,7 @@ import {
   TitleRow,
   inputCls,
 } from "@/components/ui";
+import { useCollege } from "@/lib/browser/college";
 import {
   download,
   renderSingle,
@@ -45,6 +46,7 @@ export default function GeneratePage() {
   const { book, sheetName, students, photos, edits, options, selected } =
     useStore();
   const setOptions = useStore.getState().setOptions;
+  const college = useCollege();
   const [progress, setProgress] = useState<Progress | null>(null);
   const [result, setResult] = useState<{
     name: string;
@@ -120,7 +122,7 @@ export default function GeneratePage() {
     setResult(null);
     setProgress({ done: 0, total: 1, label: "Starting…" });
     const job = startJob(
-      { students: jobStudents, options: o, zipName: base },
+      { students: jobStudents, options: o, zipName: base, college: college.id },
       setProgress,
     );
     running.current = job;
@@ -144,7 +146,7 @@ export default function GeneratePage() {
   async function single() {
     setError(null);
     try {
-      for (const f of await renderSingle(jobStudents[selected], o, theme))
+      for (const f of await renderSingle(jobStudents[selected], o, theme, college.id))
         download(f.name, f.blob);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Rendering failed");

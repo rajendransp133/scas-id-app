@@ -13,7 +13,7 @@ ctx.onmessage = async (e: MessageEvent<{ job: GenJob; origin: string }>) => {
       ctx.postMessage({ type: "unsupported" });
       return;
     }
-    const env = await browserEnv(e.data.origin);
+    const env = await browserEnv(e.data.job.college ?? "scas", e.data.origin);
     const res = await runJob(e.data.job, env, (p) => ctx.postMessage({ type: "progress", ...p }));
     ctx.postMessage({ type: "done", zip: res.zip, files: res.files });
   } catch (err) {
